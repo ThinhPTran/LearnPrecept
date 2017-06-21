@@ -21,6 +21,16 @@
       =>
       (insert-unconditional! [?e :todo/done true]))
 
+(rule remove-entity
+      {:group :action}
+      [[_ :remove-entity ?e]]
+      [ ?todo <- [?e :todo/title]]
+      =>
+      (retract! ?todo))
+      ;(.log js/console (str "This entity is going to be removed" ?e))
+      ;(.log js/console (str "todo: " ?todo)))
+      ;(.log js/console (str "It is " ?title)))
+
 (rule save-edit
       {:group :action}
       [[_ :todo/save-edit ?e]]
@@ -34,7 +44,6 @@
       [[_ :input/key-code 13]]
       [[?e :todo/edit]]
       =>
-      (.log js/console (str "save-edit-when-enter-pressed"))
       (insert! [:transient :todo/save-edit ?e]))
 
 (rule create-todo-when-enter-pressed
@@ -42,7 +51,6 @@
       [[_ :input/key-code 13]]
       [[_ :entry/title ?value]]
       =>
-      (.log js/console (str "create-todo-when-enter-pressed: "  ?value))
       (insert! [:transient :todo/create :tag]))
 
 (rule create-todo
@@ -50,7 +58,6 @@
       [[_ :todo/create]]
       [?entry <- [_ :entry/title ?v]]
       =>
-      (.log js/console (str "create-todo"))
       (retract! ?entry)
       (insert-unconditional! (todo ?v)))
 
@@ -63,14 +70,12 @@
 (rule insert-done-count
       [?n <- (acc/count) :from [_ :todo/done true]]
       =>
-      (.log js/console (str "n: " ?n))
       (insert-unconditional! (done-count ?n)))
 
 (rule insert-active-count
       [[_ :done-count ?done]]
       [?total <- (acc/count) :from [:todo/title]]
       =>
-      (.log js/console (str "?total: " ?total))
       (insert-unconditional! (active-count (- ?total ?done))))
 
 (defsub :task-list
