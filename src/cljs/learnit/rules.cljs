@@ -6,16 +6,57 @@
             [precept.rules :refer-macros [define defsub session rule]]
             [learnit.facts :refer [todo entry done-count active-count visibility-filter]]))
 
-;(rule create-todo
-;      {:group :action}
-;      [[_ :todo/create]]
-;      [?entry <- [_ :entry/title ?v]]
-;      =>
-;      (retract! ?entry)
-;      (insert-unconditional! (todo ?v)))
+(rule clear-completed
+      {:group :action}
+      [[_ :clear-completed]]
+      [[?e :todo/done true]]
+      [(<- ?done-entity (entity ?e))]
+      =>
+      (retract! ?done-entity))
+
+(rule complete-all
+      {:group :action}
+      [[_ :mark-all-done]]
+      [[?e :todo/done false]]
+      =>
+      (insert-unconditional! [?e :todo/done true]))
+
+(rule save-edit
+      {:group :action}
+      [[_ :todo/save-edit ?e]]
+      [?edit <- [?e :todo/edit ?v]]
+      =>
+      (retract! ?edit)
+      (insert-unconditional! [?e :todo/title ?v]))
+
+(rule save-edit-when-enter-pressed
+      {:group :action}
+      [[_ :input/key-code 13]]
+      [[?e :todo/edit]]
+      =>
+      (.log js/console (str "save-edit-when-enter-pressed"))
+      (insert! [:transient :todo/save-edit ?e]))
+
+(rule create-todo-when-enter-pressed
+      {:group :action}
+      [[_ :input/key-code 13]]
+      [[_ :entry/title ?value]]
+      =>
+      (.log js/console (str "create-todo-when-enter-pressed: "  ?value))
+      (insert! [:transient :todo/create :tag]))
+
+(rule create-todo
+      {:group :action}
+      [[_ :todo/create]]
+      [?entry <- [_ :entry/title ?v]]
+      =>
+      (.log js/console (str "create-todo"))
+      (retract! ?entry)
+      (insert-unconditional! (todo ?v)))
 
 (define [?e :todo/visible true] :-
-        [:or [:and [_ :visibility-filter :all] [?e :todo/title]]
+        [:or
+         [:and [_ :visibility-filter :all] [?e :todo/title]]
          [:and [_ :visibility-filter :done] [?e :todo/done true]]
          [:and [_ :visibility-filter :active] [?e :todo/done false]]])
 

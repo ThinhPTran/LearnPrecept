@@ -4,7 +4,7 @@
             [precept.state :as state]))
 
 (defn gen-db-schema []
-  [(attribute :toto/title
+  [(attribute :todo/title
               :db.type/string
               :db/unique :db.unique/identity)
    (attribute :todo/done
